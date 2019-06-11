@@ -1,0 +1,91 @@
+1.部署ansible的环境,绑定/etc/hosts,写配置文件ansible.cfg   myhosts
+
+2.部署java环境
+ ansible app -m command -a "yum -y install java-1.8.0-openjdk"
+
+ anisble app -m command -a "tar -xf hadoop-2.7.6.tar.gz -C /usr/local/"
+
+3.rpm -ql  java-1.8.0-openjdk  查询java安装的路径
+
+4.修改ssh无密码认证
+  ssh-keygen
+  for i in {6..9}; do ssh-copy-id 172.16.0.$i; done
+
+
+5.修改配置文件 slaves hadoop-env.sh  core-site.xml  hdfs-site.xml,相关资料都在github上
+
+6.ansible app -m copy -a "src=/usr/local/hadoop-2.7.6/etc/hadoop/slaves  dest=/usr/local/hadoop-2.7.6/etc/hadoop/"
+
+7.ansible app -m copy -a "src=/usr/local/hadoop-2.7.6/etc/hadoop/core-site.xml  dest=/usr/local/hadoop-2.7.6/etc/hadoop/"
+
+8. ansible app -m copy -a "src=/usr/local/hadoop-2.7.6/etc/hadoop/hdfs-site.xml  dest=/usr/local/hadoop-2.7.6/etc/hadoop/"
+
+9.创建文件夹/var/hadoop
+   ssh  web1   /var/hadoop;  ssh web2  /var/hadoop;  ssh web3  /var/hadoop
+
+10.格式化namenode节点
+   /usr/local/hadoop-2.7.6/bin/hdfs  namenode -format
+
+11.启动集群
+   /usr/local/hadoop-2.7.6/sbin/start-dfs.sh
+12.验证集群是否创建成功
+  /usr/local/hadoop-2.7.6/bin/hdfs dfsadmin -report
+
+####【[root@nn01 ansible]# /usr/local/hadoop-2.7.6/bin/hdfs dfsadmin -report
+Configured Capacity: 126421204992 (117.74 GB)
+Present Capacity: 98187337728 (91.44 GB)
+DFS Remaining: 98187251712 (91.44 GB)
+DFS Used: 86016 (84 KB)
+DFS Used%: 0.00%
+Under replicated blocks: 0
+Blocks with corrupt replicas: 0
+Missing blocks: 0
+Missing blocks (with replication factor 1): 0
+
+-------------------------------------------------
+Live datanodes (3:)   三个节点创建成功，ok    
+###】
+
+
+
+
+
+
+
+##############################################################hadoop集群初步搭建成功##############################################################
+
+
+创建文件系统
+pwd=/usr/local/hadoop-2.7.6/etc/hadoop/
+
+1. mv mapred-site.xml.template   mapred-site.xml
+2. 修改yarn.xml的配置文件
+
+3.同步配置文件
+   ansible app -m copy -a "src=/usr/local/hadoop-2.7.6/etc/hadoop/yarn-site.xml  dest=/usr/local/hadoop-2.7.6/etc/hadoop/"
+   ansible app -m copy -a "src=/usr/local/hadoop-2.7.6/etc/hadoop/mapred-site.xml  dest=/usr/local/hadoop-2.7.6/etc/hadoop/
+
+4.启动服务
+  /usr/local/hadoop/sbin/start-yarn.sh
+
+5.查看节点状态
+   /usr/local/hadoop/bin/yarn  node -list
+
+########################################################################hadoop文件系统部署完毕，等待上传文件#########################################
+
+
+在hadoop文件系统中创建文件夹
+ /usr/local/hadoop-2.7.6/bin/hadoop   fs -mkdir(rmdir指删除) /tag  
+ /usr/local/hadoop-2.7.6/bin/hadoop   fs  -touchz(新建文件)  /aaa
+
+上传文件到指定目录
+ cp -r  *  /usr/local/hadoop-2.7.6/    tar包文件放置于/usr/local/hadoop-2.7.6/目录下
+
+  /usr/local/hadoop-2.7.6/bin/hadoop  fs -put *.tar.gz  /tag
+
+网页访问外网查询结果
+ curl http://49.4.71.137:50070/
+
+
+
+##############################################################################hadoop文件系统终结##################################################
